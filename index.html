@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>КРИПТА — браузерный raycasting-шутер | дневник разработки</title>
+<meta name="description" content="КРИПТА — инди-шутер от первого лица на чистом JavaScript и Canvas, построенный на алгоритме raycasting. Один HTML-файл, без сборщиков и библиотек.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0908;
+    --panel:#141110;
+    --line:#2a211d;
+    --blood:#a3231f;
+    --blood-bright:#e0362f;
+    --amber:#d98e04;
+    --amber-bright:#ffb020;
+    --text:#e8e2d8;
+    --muted:#9a9184;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:'Manrope',sans-serif; font-size:17px; line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,.tag{ font-family:'Oswald',sans-serif; }
+  a{ color:var(--amber-bright); }
+  .wrap{ max-width:720px; margin:0 auto; padding:0 24px; }
+  .wide{ max-width:960px; margin:0 auto; padding:0 24px; }
+
+  /* ---- hero ---- */
+  .hero{
+    position:relative; min-height:86vh; display:flex; align-items:flex-end;
+    background:#000;
+  }
+  .hero img{
+    position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
+    opacity:.62; filter:saturate(1.05);
+  }
+  .hero::after{
+    content:""; position:absolute; inset:0;
+    background:linear-gradient(180deg, rgba(10,9,8,.15) 0%, rgba(10,9,8,.55) 55%, var(--bg) 100%);
+  }
+  .hero-content{ position:relative; z-index:1; padding:0 24px 64px; max-width:760px; margin:0 auto; width:100%; }
+  .eyebrow{
+    font-family:'Manrope'; font-size:14px; color:var(--muted);
+    margin:0 0 14px; letter-spacing:.02em;
+  }
+  h1{
+    font-size:clamp(40px,7vw,64px); font-weight:700; line-height:1.05; margin:0 0 18px;
+    color:var(--text); text-shadow:0 2px 18px rgba(0,0,0,.6);
+  }
+  .lede{ font-size:19px; color:#d8d1c4; max-width:56ch; margin:0 0 28px; }
+  .cta-row{ display:flex; gap:14px; flex-wrap:wrap; align-items:center; }
+  .btn{
+    display:inline-block; padding:13px 26px; border-radius:3px; text-decoration:none;
+    font-family:'Manrope'; font-weight:700; font-size:15px;
+  }
+  .btn-primary{ background:var(--blood-bright); color:#fff; }
+  .btn-primary:hover{ background:#ff4a3d; }
+  .btn-ghost{ border:1.5px solid var(--line); color:var(--text); }
+  .btn-ghost:hover{ border-color:var(--amber); color:var(--amber-bright); }
+
+  /* ---- sections ---- */
+  section{ padding:64px 0; border-top:1px solid var(--line); }
+  section:first-of-type{ border-top:none; }
+  h2{
+    font-size:26px; font-weight:600; color:var(--text); margin:0 0 22px;
+  }
+  p{ margin:0 0 16px; color:#cfc7ba; }
+  .lead-p{ color:var(--text); font-size:18px; }
+
+  .facts{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:0; margin:34px 0 0; border-top:1px solid var(--line); }
+  .fact{ padding:18px 0 0; border-bottom:1px solid var(--line); padding-bottom:18px; }
+  .fact b{ display:block; font-family:'Oswald'; font-size:22px; color:var(--amber-bright); font-weight:600; }
+  .fact span{ font-size:14px; color:var(--muted); }
+
+  .tech-list{ list-style:none; margin:0; padding:0; }
+  .tech-list li{
+    padding:20px 0; border-bottom:1px solid var(--line);
+    display:grid; grid-template-columns:120px 1fr; gap:20px;
+  }
+  .tech-list li:first-child{ padding-top:0; }
+  .tech-list b{ color:var(--amber-bright); font-weight:600; font-size:15px; }
+  .tech-list p{ margin:0; color:#cfc7ba; }
+
+  .shots{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:8px; }
+  .shots figure{ margin:0; }
+  .shots img{ width:100%; display:block; border:1px solid var(--line); }
+  .shots figcaption{ font-size:13px; color:var(--muted); margin-top:8px; }
+
+  .levels{ list-style:none; margin:0; padding:0; counter-reset:lvl; }
+  .levels li{
+    counter-increment:lvl; padding:18px 0; border-bottom:1px solid var(--line);
+    display:flex; gap:20px; align-items:baseline;
+  }
+  .levels li::before{
+    content:counter(lvl); font-family:'Oswald'; font-size:15px; color:var(--muted);
+    width:20px; flex-shrink:0;
+  }
+  .levels b{ color:var(--text); font-weight:600; margin-right:10px; }
+  .levels span{ color:var(--muted); font-size:15px; }
+
+  .controls{ display:grid; grid-template-columns:1fr 2fr; gap:0; }
+  .controls div{ padding:14px 0; border-bottom:1px solid var(--line); }
+  .controls .key{ font-family:'Oswald'; font-size:14px; color:var(--amber); }
+  .controls .desc{ color:#cfc7ba; font-size:15px; }
+
+  footer{ padding:40px 0 60px; }
+  footer p{ font-size:14px; color:var(--muted); margin:0; }
+
+  @media (max-width:640px){
+    .shots{ grid-template-columns:1fr; }
+    .tech-list li, .controls div:nth-child(odd){ grid-template-columns:1fr; gap:6px; }
+    .controls{ grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <img src="img/screen-gameplay.jpg" alt="Скриншот геймплея КРИПТА — коридор ангара, враг впереди, HUD с монетами и здоровьем">
+  <div class="hero-content">
+    <p class="eyebrow">дневник разработки · браузерная игра</p>
+    <h1>Подземелье не прощает ошибок</h1>
+    <p class="lede">КРИПТА — шутер от первого лица в духе Doom девяностых, полностью написанный на JavaScript и Canvas. Один HTML-файл. Без движка, без сборки, без единой внешней библиотеки для рендера.</p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="#screenshots">Смотреть скриншоты</a>
+      <a class="btn btn-ghost" href="#tech">Как это устроено</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<section id="about">
+  <h2>О проекте</h2>
+  <p class="lead-p">Игрок спускается через логово тварей, отстреливаясь от врагов ближнего и дальнего боя, и тратит добытые монеты в лавке апгрейдов между уровнями. Каждый спуск — это гонка на выживание: чем глубже, тем плотнее засады и тем злее враги.</p>
+  <p>Технически всё держится на raycasting — той самой технике, которая в 1992 году лежала в основе Wolfenstein 3D. Никакого WebGL и трёхмерных движков: трёхмерность на экране — иллюзия, построенная из вертикальных полос и математики лучей, пересчитываемой заново на каждом кадре.</p>
+  <div class="facts">
+    <div class="fact"><b>4</b><span>уровня подземелья</span></div>
+    <div class="fact"><b>1</b><span>HTML-файл целиком</span></div>
+    <div class="fact"><b>0</b><span>внешних библиотек рендера</span></div>
+    <div class="fact"><b>1</b><span>босс в финале</span></div>
+  </div>
+</section>
+
+<section id="tech">
+  <h2>Как это устроено</h2>
+  <p>Ни сборщика, ни npm, ни подключаемых фреймворков — вся игра открывается двойным щелчком по файлу.</p>
+  <ul class="tech-list">
+    <li>
+      <b>Рендер</b>
+      <p>Алгоритм DDA (Digital Differential Analyzer) построчно вычисляет пересечение каждого луча со стенами карты и рисует вертикальную полосу нужной высоты и яркости — классический трюк raycasting-движков начала девяностых, реализованный на 2D Canvas.</p>
+    </li>
+    <li>
+      <b>Враги</b>
+      <p>Конечный автомат на несколько состояний — патруль, преследование, атака. Дальнобойные противники дополнительно считают траекторию снаряда до игрока и корректируют угол на лету.</p>
+    </li>
+    <li>
+      <b>Звук</b>
+      <p>Ни одного аудиофайла в проекте. Все эффекты — от выстрела до победной темы — генерируются на лету через Web Audio API.</p>
+    </li>
+    <li>
+      <b>Управление</b>
+      <p>WASD и мышь с Pointer Lock на десктопе; адаптивный джойстик и свайп-прицеливание на мобильных, с автоопределением поворота экрана.</p>
+    </li>
+  </ul>
+</section>
+
+<section id="screenshots">
+  <h2>Скриншоты</h2>
+  <div class="shots">
+    <figure>
+      <img src="img/screen-title.jpg" alt="Титульный экран игры КРИПТА с описанием управления">
+      <figcaption>Титульный экран — управление показано сразу, без отдельного обучающего уровня</figcaption>
+    </figure>
+    <figure>
+      <img src="img/screen-gameplay.jpg" alt="Геймплей: первый уровень Ангар, враг в коридоре">
+      <figcaption>Первый уровень, «Ангар» — враг ближнего боя перекрывает проход</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="levels">
+  <h2>Уровни</h2>
+  <ul class="levels">
+    <li><b>Ангар</b><span>ржавые коридоры у самого входа в подземелье</span></li>
+    <li><b>Лаборатория</b><span>тесные металлические отсеки и стрелки на дальних дистанциях</span></li>
+    <li><b>Катакомбы</b><span>токсичные тоннели, где враги бьют плотными группами</span></li>
+    <li><b>Логово</b><span>финал спуска и встреча со Стражем Глубин</span></li>
+  </ul>
+</section>
+
+<section id="controls">
+  <h2>Управление</h2>
+  <div class="controls">
+    <div class="key">WASD</div><div class="desc">движение</div>
+    <div class="key">Мышь</div><div class="desc">обзор (Pointer Lock)</div>
+    <div class="key">ЛКМ / Пробел</div><div class="desc">выстрел</div>
+    <div class="key">Esc</div><div class="desc">пауза</div>
+    <div class="key">Мобильные</div><div class="desc">джойстик слева, свайп-прицел справа, кнопка огня</div>
+  </div>
+</section>
+
+<section id="author">
+  <h2>Об авторе</h2>
+  <p>Пишу браузерные игры в свободное время, с одним и тем же правилом: каждая должна умещаться в один HTML-файл, без сборки и внешних зависимостей. До КРИПТЫ были аркадный боец ROBO ARENA и его продолжение MECH BRAWL с посегментным разрушением частей тела роботов — обе тоже на чистом Canvas и JavaScript.</p>
+</section>
+
+</div>
+
+<footer>
+  <div class="wrap">
+    <p>КРИПТА — независимый проект. Сделано на JavaScript и Canvas, без движков.</p>
+  </div>
+</footer>
+
+</body>
+</html>
